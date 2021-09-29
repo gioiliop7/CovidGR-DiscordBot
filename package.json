@@ -1,0 +1,17 @@
+{
+  "name": "covidgrbot",
+  "version": "1.0.0",
+  "description": "The package of covid gr discord bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Giorgos Iliopoulos",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.21.4",
+    "discord.js": "^13.1.0",
+    "dotenv": "^10.0.0",
+    "node": "16.6.1"
+  }
+}
