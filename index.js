@@ -1,9 +1,6 @@
 require("dotenv").config(); //initialize dotenv
 const axios = require("axios"); //add this line at the top
 const Discord = require("discord.js"); //import discord.js
-const { MessageCollector } = require("discord-collector");
-const { exit } = require("process");
-
 const client = new Discord.Client({
   intents: [Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILDS],
 });
@@ -76,9 +73,34 @@ client.on("message", async (msg) => {
     case "!covidhelp":
       msg.reply("You are plebas!");
       break;
-    case "!erotisi":
-      // Await !vote messages
+    case "!validate":
+      msg.channel.send("Δώσε την ημερομηνία που εμβολιάστηκες");
+      const collector = new Discord.MessageCollector(msg.channel, m => m.author.id === msg.author.id || m.author.id === guest.id, {
+        time: 1000,
+        max: 1,
+        maxMatches: 100
+        
+      });
 
+      collector.on('collect', m => {
+
+        var today = new Date();
+        var myDate = m.content;
+        myDate = myDate.split("-");
+        var newDate = new Date(myDate[2], myDate[1] - 1, myDate[0]);
+        var newDate = newDate.getTime(); // Give that from user
+        fourteen_days = today.setDate(today.getDate() - 14);
+
+        if (newDate <= fourteen_days && m.author.id === m.author.id) {
+          m.channel.send("Έχεις έγκυρο πιστοποιητικό");
+          m.react("✅");
+          collector.stop();
+        } else if (newDate > fourteen_days) {
+          m.channel.send("Δεν έχεις έγκυρο πιστοποιητικό");
+          m.react("❌");
+          collector.stop();
+        }
+      });
       break;
     case "!emvolio":
       msg.reply(
@@ -128,36 +150,32 @@ client.on("message", async (msg) => {
   }
 });
 
-client.on("messageCreate", async (message) => {
-  try {
-    if (message.content.startsWith("!validation")) {
-      const botMessage = await message.channel.send(
-        "Δώσε την ημερομηνία που εμβολιάστηκες"
-      );
-      MessageCollector.question({
-        botMessage,
-        user: message.author.id,
-        onMessage: async (botMessage, message) => {
-          the_message = message.content;
-          var today = new Date();
-          var myDate = message.content;
-          myDate = myDate.split("-");
-          var newDate = new Date(myDate[2], myDate[1] - 1, myDate[0]);
-          var newDate = newDate.getTime(); // Give that from user
-          fourteen_days = today.setDate(today.getDate() - 14);
-          if (newDate <= fourteen_days) {
-            await message.channel.send("Έχεις έγκυρο πιστοποιητικό");
-            await message.react("✅");
-          } else {
-            await message.channel.send("Δεν έχεις έγκυρο πιστοποιητικό");
-            await message.react("❌");
-          }
-        },
-      });
-    }
-  } catch (error) {
-    console.log("ends");
-  }
-});
+// client.on("messageCreate", async (message) => {
+//   if (message.content == "!validation") {
+//     const botMessage = await message.channel.send(
+//       "Δώσε την ημερομηνία που εμβολιάστηκες"
+//     );
+//     MessageCollector.question({
+//       botMessage,
+//       user: message.author.id,
+//       onMessage: async (botMessage, message) => {
+//         the_message = message.content;
+//         var today = new Date();
+//         var myDate = message.content;
+//         myDate = myDate.split("-");
+//         var newDate = new Date(myDate[2], myDate[1] - 1, myDate[0]);
+//         var newDate = newDate.getTime(); // Give that from user
+//         fourteen_days = today.setDate(today.getDate() - 14);
+//         if (newDate <= fourteen_days) {
+//           await message.channel.send("Έχεις έγκυρο πιστοποιητικό, ξαναπληκτρολόγησε ημερομηνία").react("✅");
+//           client.destroy();
+//         } else {
+//           await message.channel.send("Δεν έχεις έγκυρο πιστοποιητικό, ξαναπληκτρολόγησε ημερομηνία").react("❌");
+//           client.destroy();
+//         }
+//       },
+//     });
+//   }
+// });
 //make sure this line is the last line
 client.login(process.env.CLIENT_TOKEN); //login bot using token
