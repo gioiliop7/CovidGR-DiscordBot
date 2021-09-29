@@ -1,6 +1,8 @@
 require("dotenv").config(); //initialize dotenv
 const axios = require("axios"); //add this line at the top
 const Discord = require("discord.js"); //import discord.js
+const { MessageCollector } = require("discord-collector");
+const { exit } = require("process");
 
 const client = new Discord.Client({
   intents: [Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILDS],
@@ -8,6 +10,10 @@ const client = new Discord.Client({
 
 client.on("ready", () => {
   console.log(`Logged in as ${client.user.tag}!`);
+});
+
+client.on("ready", () => {
+  client.user.setActivity("Covid-19 Cases", { type: "WATCHING" });
 });
 
 url_cases = "https://covid-19-greece.herokuapp.com/all";
@@ -70,6 +76,10 @@ client.on("message", async (msg) => {
     case "!covidhelp":
       msg.reply("You are plebas!");
       break;
+    case "!erotisi":
+      // Await !vote messages
+
+      break;
     case "!emvolio":
       msg.reply(
         "Δες περισσότερες πληροφορίες για το εμβόλιο στο https://emvolio.gov.gr/"
@@ -81,7 +91,7 @@ client.on("message", async (msg) => {
       );
       break;
     case "!about":
-      msg.reply("You are plebas!");
+      msg.reply("Created with 😊 by gioiliop7 ");
       break;
     case "!cases":
       const todays_cases = await cases();
@@ -118,5 +128,36 @@ client.on("message", async (msg) => {
   }
 });
 
+client.on("messageCreate", async (message) => {
+  try {
+    if (message.content.startsWith("!validation")) {
+      const botMessage = await message.channel.send(
+        "Δώσε την ημερομηνία που εμβολιάστηκες"
+      );
+      MessageCollector.question({
+        botMessage,
+        user: message.author.id,
+        onMessage: async (botMessage, message) => {
+          the_message = message.content;
+          var today = new Date();
+          var myDate = message.content;
+          myDate = myDate.split("-");
+          var newDate = new Date(myDate[2], myDate[1] - 1, myDate[0]);
+          var newDate = newDate.getTime(); // Give that from user
+          fourteen_days = today.setDate(today.getDate() - 14);
+          if (newDate <= fourteen_days) {
+            await message.channel.send("Έχεις έγκυρο πιστοποιητικό");
+            await message.react("✅");
+          } else {
+            await message.channel.send("Δεν έχεις έγκυρο πιστοποιητικό");
+            await message.react("❌");
+          }
+        },
+      });
+    }
+  } catch (error) {
+    console.log("ends");
+  }
+});
 //make sure this line is the last line
 client.login(process.env.CLIENT_TOKEN); //login bot using token
