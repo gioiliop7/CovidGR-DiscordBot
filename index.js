@@ -1,16 +1,14 @@
 require("dotenv").config(); //initialize dotenv
 const axios = require("axios"); //add this line at the top
 const Discord = require("discord.js"); //import discord.js
+const { CLIENT_RENEG_WINDOW } = require("tls");
 const client = new Discord.Client({
   intents: [Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILDS],
 });
 
 client.on("ready", () => {
   console.log(`Logged in as ${client.user.tag}!`);
-});
-
-client.on("ready", () => {
-  client.user.setActivity("Covid-19 Cases", { type: "WATCHING" });
+  client.user.setActivity("!covidhelp", { type: "LISTENING" });
 });
 
 url_cases = "https://covid-19-greece.herokuapp.com/all"; // Done
@@ -232,8 +230,23 @@ client.on("message", async (msg) => {
         .setColor("#2f3136")
         .setTitle("CovidGR-Bot Commands")
         .addFields(
-          { name: "help - information", value: "!covidhelp" },
-          { name: "test - information", value: "!test" }
+          { name: "Bot Commands", value: "!covidhelp" },
+          {
+            name: "Έλεγχος εγκυρότητας πιστοποιητικού εμβολιασμού",
+            value: "!validate",
+          },
+          { name: "Ραντεβού εμβολιασμού", value: "!emvolio" },
+          { name: "Περισσότερα για μένα", value: "!about" },
+          { name: "Κρούσματα", value: "!cases" },
+          { name: "Θανάτοι", value: "!deaths" },
+          { name: "Διασωληνομένοι", value: "!ic" },
+          { name: "Εμβολιασμοί", value: "!vaccs" },
+          { name: "Tests", value: "!tests" },
+          { name: "Ηλικιακά δεδομένα", value: "!age" },
+          {
+            name: "Δείκτης θετικότητας ελέγχων ανά περιφέρεια",
+            value: "!risklevels",
+          }
         )
         .setFooter("Για οποιαδήποτε απορια στείλε στον gioiliop7#9306");
       msg.channel.send({ embeds: [help_embed] });
@@ -1144,6 +1157,28 @@ client.on("message", async (msg) => {
       });
       break;
   }
+});
+
+const bot_commands = [
+  "!covidhelp",
+  "!validate",
+  "!emvolio",
+  "!about",
+  "!cases",
+  "!deaths",
+  "!ic",
+  "!vaccs",
+  "!tests",
+  "!age",
+  "!risklevels",
+];
+
+client.on("message", (message) => {
+  if (message.author.bot) return;
+  if (bot_commands.includes(message.content)) return;
+  message.channel.send(
+    "Το συγκεκριμένο command δεν είναι διαθέσιμο. Δείτε τα διαθέσιμα command πληκτρολογώντας !covidhelp"
+  );
 });
 
 //make sure this line is the last line
