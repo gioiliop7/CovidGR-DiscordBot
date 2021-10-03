@@ -17,10 +17,11 @@ url_cases = "https://covid-19-greece.herokuapp.com/all"; // Done
 url_deaths = "https://covid-19-greece.herokuapp.com/deaths"; // Done
 url_vaccinations = "https://covid-19-greece.herokuapp.com/total-vaccinations"; // Done
 url_risklevels = "https://covid-19-greece.herokuapp.com/risk-levels"; // Done
-url_entatiki = "https://covid-19-greece.herokuapp.com/intensive-care";
-url_tests = "https://covid-19-greece.herokuapp.com/total-tests";
+url_entatiki = "https://covid-19-greece.herokuapp.com/intensive-care"; // Done
+url_tests = "https://covid-19-greece.herokuapp.com/total-tests"; // Done
 url_male = "https://covid-19-greece.herokuapp.com/male-cases-history";
 url_female = "https://covid-19-greece.herokuapp.com/female-cases-history";
+url_age = "https://covid-19-greece.herokuapp.com/age-distribution"; // Done
 
 const cases = async () => {
   try {
@@ -83,6 +84,80 @@ const deaths_call = async () => {
     let the_result = {};
     the_result.last_update = last_update;
     the_result.deaths = deaths;
+    return JSON.stringify(the_result);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+const ic_call = async () => {
+  try {
+    const result = await axios.get(url_entatiki);
+    let the_cases = result.data.cases;
+    let length_of_cases = the_cases.length;
+    let today = length_of_cases - 1;
+    let todays_cases = the_cases[today];
+    let ic = todays_cases["intensive_care"];
+    let last_update = todays_cases["date"];
+    const d = new Date(last_update);
+    const ye = new Intl.DateTimeFormat("el", { year: "numeric" }).format(d);
+    const mo = new Intl.DateTimeFormat("el", { month: "short" }).format(d);
+    const da = new Intl.DateTimeFormat("el", { day: "2-digit" }).format(d);
+    last_update = `${da}-${mo}-${ye}`;
+    let the_result = {};
+    the_result.last_update = last_update;
+    the_result.ic = ic;
+    return JSON.stringify(the_result);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+const tests_call = async () => {
+  try {
+    const result = await axios.get(url_tests);
+    let the_cases = result.data.total_tests;
+    let length_of_cases = the_cases.length;
+    let today = length_of_cases - 1;
+    let todays_cases = the_cases[today];
+    let last_update = todays_cases["date"];
+    let rapids = todays_cases["rapid-tests"];
+    let the_tests = todays_cases["tests"];
+    let total_tests = rapids + the_tests;
+    const d = new Date(last_update);
+    const ye = new Intl.DateTimeFormat("el", { year: "numeric" }).format(d);
+    const mo = new Intl.DateTimeFormat("el", { month: "short" }).format(d);
+    const da = new Intl.DateTimeFormat("el", { day: "2-digit" }).format(d);
+    last_update = `${da}-${mo}-${ye}`;
+    let the_result = {};
+    the_result.last_update = last_update;
+    the_result.rapids = rapids;
+    the_result.the_tests = the_tests;
+    the_result.total_tests = total_tests;
+    return JSON.stringify(the_result);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+const age_call = async () => {
+  try {
+    const result = await axios.get(url_age);
+    let the_cases = result.data.age_distribution;
+    let last_update = the_cases.updated;
+    const d = new Date(last_update);
+    const ye = new Intl.DateTimeFormat("el", { year: "numeric" }).format(d);
+    const mo = new Intl.DateTimeFormat("el", { month: "short" }).format(d);
+    const da = new Intl.DateTimeFormat("el", { day: "2-digit" }).format(d);
+    last_update = `${da}-${mo}-${ye}`;
+    let average = the_cases.age_average;
+    let average_death = the_cases.average_death_age;
+    let total_age_groups = the_cases.total_age_groups;
+    let the_result = {};
+    the_result.last_update = last_update;
+    the_result.average = average;
+    the_result.average_death = average_death;
+    the_result.total_age_groups = total_age_groups;
     return JSON.stringify(the_result);
   } catch (err) {
     console.log(err);
@@ -241,6 +316,23 @@ client.on("message", async (msg) => {
         .setFooter("Τελευταία ενημέρωση δεδομένων - " + deaths_update_in);
       msg.channel.send({ embeds: [deaths_embed] });
       break;
+    case "!ic":
+      const todays_ic = await ic_call();
+      const icresultjson = await JSON.parse(todays_ic);
+      console.log(icresultjson);
+      let ic_update_in = icresultjson.last_update;
+      let ic_num = icresultjson.ic;
+      const ic_embed = new Discord.MessageEmbed()
+        .setColor("#ffc522")
+        .setTitle("Διασωληνομένοι: " + ic_num)
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + ic_update_in);
+      msg.channel.send({ embeds: [ic_embed] });
+      break;
     case "!vaccs":
       const todays_vaccs = await vaccs_call();
       const vaccsresultjson = await JSON.parse(todays_vaccs);
@@ -258,7 +350,170 @@ client.on("message", async (msg) => {
         .setFooter("Τελευταία ενημέρωση δεδομένων - " + vaccs_update_in);
       msg.channel.send({ embeds: [vaccs_embed] });
       break;
+    case "!tests":
+      const todays_tests = await tests_call();
+      const testsresultjson = await JSON.parse(todays_tests);
+      let tests_update_in = testsresultjson.last_update;
+      let rapids_num = testsresultjson.rapids;
+      let moriaka = testsresultjson.the_tests;
+      let total_tests = testsresultjson.total_tests;
+      const tests_embed = new Discord.MessageEmbed()
+        .setColor("#00aeef")
+        .setTitle("Συνολικά tests: " + total_tests)
+        .addFields(
+          { name: "Μοριακά:", value: "" + moriaka, inline: true },
+          { name: "Rapid:", value: "" + rapids_num, inline: true }
+        )
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + tests_update_in);
+      msg.channel.send({ embeds: [tests_embed] });
+      break;
+    case "!age":
+      const todays_age_ds = await age_call();
+      const ageresultjson = await JSON.parse(todays_age_ds);
+      let age_update_in = ageresultjson.last_update;
+      let age_average = ageresultjson.average;
+      let age_average_death = ageresultjson.average_death;
+      let age_groups = ageresultjson.total_age_groups;
+      let age_groups_cases = age_groups.cases;
+      let age_groups_critical = age_groups.critical;
+      let age_groups_deaths = age_groups.deaths;
+      let cases0 = age_groups_cases["0-17"];
+      let critical0 = age_groups_critical["0-17"];
+      let deaths0 = age_groups_deaths["0-17"];
+      let cases18 = age_groups_cases["18-39"];
+      let critical18 = age_groups_critical["18-39"];
+      let deaths18 = age_groups_deaths["18-39"];
+      let cases40 = age_groups_cases["40-64"];
+      let critical40 = age_groups_critical["40-64"];
+      let deaths40 = age_groups_deaths["40-64"];
+      let cases65 = age_groups_cases["65+"];
+      let critical65 = age_groups_critical["65+"];
+      let deaths65 = age_groups_deaths["65+"];
+      const total_age_embed = new Discord.MessageEmbed()
+        .setColor("#cacaca")
+        .setTitle("Ηλικιακά δεδομένα")
+        .addFields(
+          { name: "Mέσος όρος ηλικίας", value: "" + age_average, inline: true },
+          {
+            name: "Μέσος όρος ηλικίας θανάτου",
+            value: "" + age_average_death,
+            inline: true,
+          }
+        )
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + age_update_in);
 
+      const zero_embed = new Discord.MessageEmbed()
+        .setColor("#06306a")
+        .setTitle("Ηλικιακά δεδομένα 0-17")
+        .addFields(
+          { name: "Κρούσματα", value: "" + cases0, inline: true },
+          {
+            name: "Σε κρίσιμη κατάσταση",
+            value: "" + critical0,
+            inline: true,
+          },
+          {
+            name: "Θάνατοι",
+            value: "" + deaths0,
+            inline: true,
+          }
+        )
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + age_update_in);
+
+      const eighteen_embed = new Discord.MessageEmbed()
+        .setColor("#9c2424")
+        .setTitle("Ηλικιακά δεδομένα 18-39")
+        .addFields(
+          { name: "Κρούσματα", value: "" + cases18, inline: true },
+          {
+            name: "Σε κρίσιμη κατάσταση",
+            value: "" + critical18,
+            inline: true,
+          },
+          {
+            name: "Θάνατοι",
+            value: "" + deaths18,
+            inline: true,
+          }
+        )
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + age_update_in);
+
+      const fourty_embed = new Discord.MessageEmbed()
+        .setColor("#edd5ca")
+        .setTitle("Ηλικιακά δεδομένα 40-64")
+        .addFields(
+          { name: "Κρούσματα", value: "" + cases40, inline: true },
+          {
+            name: "Σε κρίσιμη κατάσταση",
+            value: "" + critical40,
+            inline: true,
+          },
+          {
+            name: "Θάνατοι",
+            value: "" + deaths40,
+            inline: true,
+          }
+        )
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + age_update_in);
+
+      const sixtyfive_embed = new Discord.MessageEmbed()
+        .setColor("#8e8e8f")
+        .setTitle("Ηλικιακά δεδομένα 65+")
+        .addFields(
+          { name: "Κρούσματα", value: "" + cases65, inline: true },
+          {
+            name: "Σε κρίσιμη κατάσταση",
+            value: "" + critical65,
+            inline: true,
+          },
+          {
+            name: "Θάνατοι",
+            value: "" + deaths65,
+            inline: true,
+          }
+        )
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + age_update_in);
+
+      msg.channel.send({
+        embeds: [
+          total_age_embed,
+          zero_embed,
+          eighteen_embed,
+          fourty_embed,
+          sixtyfive_embed,
+        ],
+      });
+      break;
     case "!risklevels":
       const todays_risks = await levels();
       const risksresultjson = await JSON.parse(todays_risks);
