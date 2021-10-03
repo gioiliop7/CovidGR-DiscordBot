@@ -13,10 +13,10 @@ client.on("ready", () => {
   client.user.setActivity("Covid-19 Cases", { type: "WATCHING" });
 });
 
-url_cases = "https://covid-19-greece.herokuapp.com/all";
-url_deaths = "https://covid-19-greece.herokuapp.com/deaths";
-url_vaccinations = "https://covid-19-greece.herokuapp.com/total-vaccinations";
-url_risklevels = "https://covid-19-greece.herokuapp.com/risk-levels";
+url_cases = "https://covid-19-greece.herokuapp.com/all"; // Done
+url_deaths = "https://covid-19-greece.herokuapp.com/deaths"; // Done
+url_vaccinations = "https://covid-19-greece.herokuapp.com/total-vaccinations"; // Done
+url_risklevels = "https://covid-19-greece.herokuapp.com/risk-levels"; // Done
 url_entatiki = "https://covid-19-greece.herokuapp.com/intensive-care";
 url_tests = "https://covid-19-greece.herokuapp.com/total-tests";
 url_male = "https://covid-19-greece.herokuapp.com/male-cases-history";
@@ -39,6 +39,27 @@ const cases = async () => {
     let the_result = {};
     the_result.last_update = last_update;
     the_result.confirmed = confirmed;
+    return JSON.stringify(the_result);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+const vaccs_call = async () => {
+  try {
+    const result = await axios.get(url_vaccinations);
+    let the_vaccinations = result.data;
+    let total = the_vaccinations["total-vaccinations"];
+    let total_vaccinations = total.totalvaccinations;
+    let last_update = total.updated;
+    const d = new Date(last_update);
+    const ye = new Intl.DateTimeFormat("el", { year: "numeric" }).format(d);
+    const mo = new Intl.DateTimeFormat("el", { month: "short" }).format(d);
+    const da = new Intl.DateTimeFormat("el", { day: "2-digit" }).format(d);
+    last_update = `${da}-${mo}-${ye}`;
+    let the_result = {};
+    the_result.last_update = last_update;
+    the_result.vaccinations = total_vaccinations;
     return JSON.stringify(the_result);
   } catch (err) {
     console.log(err);
@@ -68,22 +89,95 @@ const deaths_call = async () => {
   }
 };
 
+const levels = async () => {
+  try {
+    const result = await axios.get(url_risklevels);
+    let the_cases = result.data.risk_levels;
+    let last_update = the_cases.last_updated;
+    const d = new Date(last_update);
+    const ye = new Intl.DateTimeFormat("el", { year: "numeric" }).format(d);
+    const mo = new Intl.DateTimeFormat("el", { month: "short" }).format(d);
+    const da = new Intl.DateTimeFormat("el", { day: "2-digit" }).format(d);
+    last_update = `${da}-${mo}-${ye}`;
+    let regions = the_cases.region;
+    let attica = regions.Attica;
+    let centralgreece = regions.Central_Greece;
+    let centralmac = regions.Central_Macedonia;
+    let crete = regions.Crete;
+    let eastern = regions.Eastern_Macedonia_and_Thrace;
+    let epirus = regions.Epirus;
+    let aegean = regions.North_Aegean;
+    let peloponissos = regions.Peloponnese;
+    let s_aegean = regions.South_Aegean;
+    let thessaly = regions.Thessaly;
+    let western_greece = regions.Western_Greece;
+    let western_macedonia = regions.Western_Macedonia;
+    let the_result = {};
+    the_result.last_update = last_update;
+    the_result.attica = attica;
+    the_result.centralgreece = centralgreece;
+    the_result.centralmac = centralmac;
+    the_result.crete = crete;
+    the_result.eastern = eastern;
+    the_result.epirus = epirus;
+    the_result.aegean = aegean;
+    the_result.peloponissos = peloponissos;
+    the_result.s_aegean = s_aegean;
+    the_result.thessaly = thessaly;
+    the_result.western_greece = western_greece;
+    the_result.western_macedonia = western_macedonia;
+    return JSON.stringify(the_result);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+function risk_level_switch(risk_level) {
+  switch (risk_level) {
+    case "A":
+      risk_level = "Επίπεδο 1";
+      break;
+    case "B":
+      risk_level = "Επίπεδο 2";
+      break;
+    case "C":
+      risk_level = "Επίπεδο 3";
+      break;
+    case "D":
+      risk_level = "Επίπεδο 4";
+      break;
+  }
+  return risk_level;
+}
+
 client.on("message", async (msg) => {
   switch (msg.content) {
     case "!covidhelp":
-      msg.reply("You are plebas!");
+      const help_embed = new Discord.MessageEmbed()
+        .setColor("#2f3136")
+        .setTitle("CovidGR-Bot Commands")
+        .addFields(
+          { name: "help - information", value: "!covidhelp" },
+          { name: "test - information", value: "!test" }
+        )
+        .setFooter("Για οποιαδήποτε απορια στείλε στον gioiliop7#9306");
+      msg.channel.send({ embeds: [help_embed] });
       break;
     case "!validate":
-      msg.channel.send("Δώσε την ημερομηνία που εμβολιάστηκες");
-      const collector = new Discord.MessageCollector(msg.channel, m => m.author.id === msg.author.id || m.author.id === guest.id, {
-        time: 1000,
-        max: 1,
-        maxMatches: 100
-        
-      });
+      msg.channel.send(
+        "Δώσε την ημερομηνία που εμβολιάστηκες στη μορφή 'ΗΗ-ΜΜ-ΕΕΕΕ'"
+      );
+      const collector = new Discord.MessageCollector(
+        msg.channel,
+        (m) => m.author.id === msg.author.id || m.author.id === guest.id,
+        {
+          time: 1000,
+          max: 1,
+          maxMatches: 100,
+        }
+      );
 
-      collector.on('collect', m => {
-
+      collector.on("collect", (m) => {
         var today = new Date();
         var myDate = m.content;
         myDate = myDate.split("-");
@@ -147,35 +241,655 @@ client.on("message", async (msg) => {
         .setFooter("Τελευταία ενημέρωση δεδομένων - " + deaths_update_in);
       msg.channel.send({ embeds: [deaths_embed] });
       break;
+    case "!vaccs":
+      const todays_vaccs = await vaccs_call();
+      const vaccsresultjson = await JSON.parse(todays_vaccs);
+      console.log(vaccsresultjson);
+      let vaccs_update_in = vaccsresultjson.last_update;
+      let vaccs_num = vaccsresultjson.vaccinations;
+      const vaccs_embed = new Discord.MessageEmbed()
+        .setColor("#84c77a")
+        .setTitle("Συνολικοί εμβολιασμοί: " + vaccs_num)
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + vaccs_update_in);
+      msg.channel.send({ embeds: [vaccs_embed] });
+      break;
+
+    case "!risklevels":
+      const todays_risks = await levels();
+      const risksresultjson = await JSON.parse(todays_risks);
+      let risks_update_in = risksresultjson.last_update;
+      let attica_data = risksresultjson.attica;
+      let centralgreece_data = risksresultjson.centralgreece;
+      let centralmac_data = risksresultjson.centralmac;
+      let crete_data = risksresultjson.crete;
+      let eastern_data = risksresultjson.eastern;
+      let epirus_data = risksresultjson.epirus;
+      let aegean_data = risksresultjson.aegean;
+      let pelo_data = risksresultjson.peloponissos;
+      let s_aegean_data = risksresultjson.s_aegean;
+      let thessaly_data = risksresultjson.thessaly;
+      let western_greece_data = risksresultjson.western_greece;
+      let western_macedonia_data = risksresultjson.western_macedonia;
+
+      let centralmac_items = [];
+      centralmac_data.forEach((element) => {
+        let ru_cm = element["regional_unit"];
+        let risk_level_cm = element["risk_level"];
+        switch (ru_cm) {
+          case "Chalkidiki":
+            ru_cm = "Χαλκιδική";
+            break;
+          case "Imathia":
+            ru_cm = "Ιμαθία";
+            break;
+          case "Kilkis":
+            ru_cm = "Κιλκίς";
+            break;
+          case "Pella":
+            ru_cm = "Πέλλα";
+            break;
+          case "Pieria":
+            ru_cm = "Πιερία";
+            break;
+          case "Serres":
+            ru_cm = "Σέρρες";
+            break;
+          case "Thessaloniki":
+            ru_cm = "Θεσσαλονίκη";
+            break;
+        }
+        risk_level_cm = risk_level_switch(risk_level_cm);
+        centralmac_items.push({ ru_cm, risk_level_cm });
+      });
+
+      let centralgreece_items = [];
+      centralgreece_data.forEach((element) => {
+        let ru_cg = element["regional_unit"];
+        let risk_level_cg = element["risk_level"];
+        switch (ru_cg) {
+          case "Boeotia":
+            ru_cg = "Βοιωτία";
+            break;
+          case "Euboea":
+            ru_cg = "Εύβοια";
+            break;
+          case "Evrytania":
+            ru_cg = "Ευρτανία";
+            break;
+          case "Phocis":
+            ru_cg = "Φωκίδα";
+            break;
+          case "Phthiotis":
+            ru_cg = "Φθιώτιδα";
+            break;
+        }
+        risk_level_cg = risk_level_switch(risk_level_cg);
+        centralgreece_items.push({ ru_cg, risk_level_cg });
+      });
+
+      let attica_items = [];
+      attica_data.forEach((element) => {
+        let ru_attica = element["regional_unit"];
+        let risk_level_attica = element["risk_level"];
+        switch (ru_attica) {
+          case "Central_Athens":
+            ru_attica = "Κεντρική Αθήνα";
+            break;
+          case "East_Attica":
+            ru_attica = "Ανατολική αττική";
+            break;
+          case "Islands":
+            ru_attica = "Νησιά Αττικής";
+            break;
+          case "North_Athens":
+            ru_attica = "Βόρεια Αθήνα";
+            break;
+          case "Piraeus":
+            ru_attica = "Πειραιάς";
+            break;
+          case "South_Athens":
+            ru_attica = "Νότια Αθήνα";
+            break;
+          case "West_Athens":
+            ru_attica = "Δυτική Αθήνα";
+            break;
+          case "West_Attica":
+            ru_attica = "Δυτική Αττική";
+            break;
+        }
+        risk_level_attica = risk_level_switch(risk_level_attica);
+        attica_items.push({ ru_attica, risk_level_attica });
+      });
+
+      let crete_items = [];
+      crete_data.forEach((element) => {
+        let ru_crete = element["regional_unit"];
+        let risk_level_crete = element["risk_level"];
+        switch (ru_crete) {
+          case "Chania":
+            ru_crete = "Χανιά";
+            break;
+          case "Rethymno":
+            ru_crete = "Ρέθυμνο";
+            break;
+          case "Heraklion":
+            ru_crete = "Ηράκλειο";
+            break;
+          case "Lasithi":
+            ru_crete = "Λασίθι";
+            break;
+        }
+        risk_level_crete = risk_level_switch(risk_level_crete);
+        crete_items.push({ ru_crete, risk_level_crete });
+      });
+
+      let eastern_items = [];
+      eastern_data.forEach((element) => {
+        let ru_eastern = element["regional_unit"];
+        let risk_level_eastern = element["risk_level"];
+        switch (ru_eastern) {
+          case "Drama":
+            ru_eastern = "Δράμα";
+            break;
+          case "Evros":
+            ru_eastern = "Έβρος";
+            break;
+          case "Kavala":
+            ru_eastern = "Καβάλα";
+            break;
+          case "Rhodope":
+            ru_eastern = "Ροδόπη";
+            break;
+          case "Thasos":
+            ru_eastern = "Θάσος";
+            break;
+          case "Xanthi":
+            ru_eastern = "Ξάνθη";
+            break;
+        }
+        risk_level_eastern = risk_level_switch(risk_level_eastern);
+        eastern_items.push({ ru_eastern, risk_level_eastern });
+      });
+
+      let epirus_items = [];
+      epirus_data.forEach((element) => {
+        let ru_epirus = element["regional_unit"];
+        let risk_level_epirus = element["risk_level"];
+        switch (ru_epirus) {
+          case "Arta":
+            ru_epirus = "Άρτα";
+            break;
+          case "Ioannina":
+            ru_epirus = "Ιωάννινα";
+            break;
+          case "Preveza":
+            ru_epirus = "Πρέβεζα";
+            break;
+          case "Thesprotia":
+            ru_epirus = "Θεσπρωτία";
+            break;
+        }
+        risk_level_epirus = risk_level_switch(risk_level_epirus);
+        epirus_items.push({ ru_epirus, risk_level_epirus });
+      });
+
+      let aegean_items = [];
+      aegean_data.forEach((element) => {
+        let ru_aegean = element["regional_unit"];
+        let risk_level_aegean = element["risk_level"];
+        switch (ru_aegean) {
+          case "Chios":
+            ru_aegean = "Χίος";
+            break;
+          case "Ikaria":
+            ru_aegean = "Ικαρία";
+            break;
+          case "Lemnos":
+            ru_aegean = "Λήμνος";
+            break;
+          case "Lesbos":
+            ru_aegean = "Λέσβος";
+            break;
+          case "Samos":
+            ru_aegean = "Σάμος";
+            break;
+        }
+        risk_level_aegean = risk_level_switch(risk_level_aegean);
+        aegean_items.push({ ru_aegean, risk_level_aegean });
+      });
+
+      let pelo_items = [];
+      pelo_data.forEach((element) => {
+        let ru_pelo = element["regional_unit"];
+        let risk_level_pelo = element["risk_level"];
+        switch (ru_pelo) {
+          case "Arcadia":
+            ru_pelo = "Αρκαδία";
+            break;
+          case "Argolis":
+            ru_pelo = "Αργολίδα";
+            break;
+          case "Corinthia":
+            ru_pelo = "Κορινθία";
+            break;
+          case "Laconia":
+            ru_pelo = "Λακωνία";
+            break;
+          case "Messenia":
+            ru_pelo = "Μεσσηνία";
+            break;
+        }
+        risk_level_pelo = risk_level_switch(risk_level_pelo);
+        pelo_items.push({ ru_pelo, risk_level_pelo });
+      });
+
+      let s_aegean_items = [];
+      s_aegean_data.forEach((element) => {
+        let ru_s_aegean = element["regional_unit"];
+        let risk_level_s_aegean = element["risk_level"];
+        switch (ru_s_aegean) {
+          case "Andros":
+            ru_s_aegean = "Άνδρος";
+            break;
+          case "Kalymnos":
+            ru_s_aegean = "Κάλυμνος";
+            break;
+          case "Karpathos":
+            ru_s_aegean = "Κάρπαθος";
+            break;
+          case "Kea-Kythnos":
+            ru_s_aegean = "Κέα - Κύθνος";
+            break;
+          case "Kos":
+            ru_s_aegean = "Κως";
+            break;
+          case "Milos":
+            ru_s_aegean = "Μήλος";
+            break;
+          case "Mykonos":
+            ru_s_aegean = "Μύκονος";
+            break;
+          case "Naxos":
+            ru_s_aegean = "Νάξος";
+            break;
+          case "Paros":
+            ru_s_aegean = "Πάρος";
+            break;
+          case "Rhodes":
+            ru_s_aegean = "Ρόδος";
+            break;
+          case "Syros":
+            ru_s_aegean = "Σύρος";
+            break;
+          case "Thira":
+            ru_s_aegean = "Θήρα";
+            break;
+          case "Tinos":
+            ru_s_aegean = "Τήνος";
+            break;
+        }
+        risk_level_s_aegean = risk_level_switch(risk_level_s_aegean);
+        s_aegean_items.push({ ru_s_aegean, risk_level_s_aegean });
+      });
+
+      let thessaly_items = [];
+      thessaly_data.forEach((element) => {
+        let ru_thessaly = element["regional_unit"];
+        let risk_level_thessaly = element["risk_level"];
+        switch (ru_thessaly) {
+          case "Karditsa":
+            ru_thessaly = "Καρδίτσα";
+            break;
+          case "Larissa":
+            ru_thessaly = "Λάρισα";
+            break;
+          case "Magnesia":
+            ru_thessaly = "Μαγνησία";
+            break;
+          case "Sporades":
+            ru_thessaly = "Σποράδες";
+            break;
+          case "Trikala":
+            ru_thessaly = "Τρίκαλα";
+            break;
+        }
+        risk_level_thessaly = risk_level_switch(risk_level_thessaly);
+        thessaly_items.push({ ru_thessaly, risk_level_thessaly });
+      });
+
+      let western_greece_items = [];
+      western_greece_data.forEach((element) => {
+        let ru_western_greece = element["regional_unit"];
+        let risk_level_western_greece = element["risk_level"];
+        switch (ru_western_greece) {
+          case "Aetolia-Acarnania":
+            ru_western_greece = "Αιτωλοακαρνανία";
+            break;
+          case "Achaea":
+            ru_western_greece = "Αχαΐα";
+            break;
+          case "Elis":
+            ru_western_greece = "Ηλεία";
+            break;
+        }
+        risk_level_western_greece = risk_level_switch(
+          risk_level_western_greece
+        );
+        western_greece_items.push({
+          ru_western_greece,
+          risk_level_western_greece,
+        });
+      });
+
+      let western_macedonia_items = [];
+      western_macedonia_data.forEach((element) => {
+        let ru_western_macedonia = element["regional_unit"];
+        let risk_level_western_macedonia = element["risk_level"];
+        switch (ru_western_macedonia) {
+          case "Florina":
+            ru_western_macedonia = "Φλώρινα";
+            break;
+          case "Grevena":
+            ru_western_macedonia = "Γρεβενά";
+            break;
+          case "Kastoria":
+            ru_western_macedonia = "Καστοριά";
+            break;
+          case "Kozani":
+            ru_western_macedonia = "Κοζάνη";
+            break;
+        }
+        risk_level_western_macedonia = risk_level_switch(
+          risk_level_western_macedonia
+        );
+        western_macedonia_items.push({
+          ru_western_macedonia,
+          risk_level_western_macedonia,
+        });
+      });
+
+      const risks_embed_attica = new Discord.MessageEmbed()
+        .setColor("#de5a4a")
+        .setTitle("Δείκτης θετικότητας ελέγχων - Αττική")
+
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + risks_update_in);
+
+      attica_items.forEach((e) => {
+        ru_attica = e.ru_attica;
+        risk_level_attica = e.risk_level_attica;
+        risks_embed_attica.addField(
+          "" + ru_attica,
+          "" + risk_level_attica,
+          true
+        );
+      });
+
+      const risks_embed_cm = new Discord.MessageEmbed()
+        .setColor("#de5a4a")
+        .setTitle("Δείκτης θετικότητας ελέγχων - Κεντρική Μακεδόνία")
+
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + risks_update_in);
+
+      centralmac_items.forEach((e) => {
+        ru_cm = e.ru_cm;
+        risk_level_cm = e.risk_level_cm;
+        risks_embed_cm.addField("" + ru_cm, "" + risk_level_cm, true);
+      });
+
+      const risks_embed_cg = new Discord.MessageEmbed()
+        .setColor("#de5a4a")
+        .setTitle("Δείκτης θετικότητας ελέγχων - Κεντρική Ελλάδα")
+
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + risks_update_in);
+
+      centralgreece_items.forEach((e) => {
+        ru_cg = e.ru_cg;
+        risk_level_cg = e.risk_level_cg;
+        risks_embed_cg.addField("" + ru_cg, "" + risk_level_cg, true);
+      });
+
+      const risks_embed_crete = new Discord.MessageEmbed()
+        .setColor("#de5a4a")
+        .setTitle("Δείκτης θετικότητας ελέγχων - Κρήτη")
+
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + risks_update_in);
+
+      crete_items.forEach((e) => {
+        ru_crete = e.ru_crete;
+        risk_level_crete = e.risk_level_crete;
+        risks_embed_crete.addField("" + ru_crete, "" + risk_level_crete, true);
+      });
+
+      const risks_embed_eastern = new Discord.MessageEmbed()
+        .setColor("#de5a4a")
+        .setTitle("Δείκτης θετικότητας ελέγχων - Ανατολική Μακεδονία και Θράκη")
+
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + risks_update_in);
+
+      eastern_items.forEach((e) => {
+        ru_eastern = e.ru_eastern;
+        risk_level_eastern = e.risk_level_eastern;
+        risks_embed_eastern.addField(
+          "" + ru_eastern,
+          "" + risk_level_eastern,
+          true
+        );
+      });
+
+      const risks_embed_epirus = new Discord.MessageEmbed()
+        .setColor("#de5a4a")
+        .setTitle("Δείκτης θετικότητας ελέγχων - Ήπειρος")
+
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + risks_update_in);
+
+      epirus_items.forEach((e) => {
+        ru_epirus = e.ru_epirus;
+        risk_level_epirus = e.risk_level_epirus;
+        risks_embed_epirus.addField(
+          "" + ru_epirus,
+          "" + risk_level_epirus,
+          true
+        );
+      });
+
+      const risks_embed_aegean = new Discord.MessageEmbed()
+        .setColor("#de5a4a")
+        .setTitle("Δείκτης θετικότητας ελέγχων - Ανατολικό Αιγαίο")
+
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + risks_update_in);
+
+      aegean_items.forEach((e) => {
+        ru_aegean = e.ru_aegean;
+        risk_level_aegean = e.risk_level_aegean;
+        risks_embed_aegean.addField(
+          "" + ru_aegean,
+          "" + risk_level_aegean,
+          true
+        );
+      });
+
+      const risks_embed_pelo = new Discord.MessageEmbed()
+        .setColor("#de5a4a")
+        .setTitle("Δείκτης θετικότητας ελέγχων - Πελοπόννησος")
+
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + risks_update_in);
+
+      pelo_items.forEach((e) => {
+        ru_pelo = e.ru_pelo;
+        risk_level_pelo = e.risk_level_pelo;
+        risks_embed_pelo.addField("" + ru_pelo, "" + risk_level_pelo, true);
+      });
+
+      const risks_embed_s_aegean = new Discord.MessageEmbed()
+        .setColor("#de5a4a")
+        .setTitle("Δείκτης θετικότητας ελέγχων - Νότιο Αιγαίο")
+
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + risks_update_in);
+
+      s_aegean_items.forEach((e) => {
+        ru_s_aegean = e.ru_s_aegean;
+        risk_level_s_aegean = e.risk_level_s_aegean;
+        risks_embed_s_aegean.addField(
+          "" + ru_s_aegean,
+          "" + risk_level_s_aegean,
+          true
+        );
+      });
+
+      const risks_embed_thessaly = new Discord.MessageEmbed()
+        .setColor("#de5a4a")
+        .setTitle("Δείκτης θετικότητας ελέγχων - Θεσσαλία")
+
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + risks_update_in);
+
+      thessaly_items.forEach((e) => {
+        ru_thessaly = e.ru_thessaly;
+        risk_level_thessaly = e.risk_level_thessaly;
+        risks_embed_thessaly.addField(
+          "" + ru_thessaly,
+          "" + risk_level_thessaly,
+          true
+        );
+      });
+
+      const risks_embed_western_greece = new Discord.MessageEmbed()
+        .setColor("#de5a4a")
+        .setTitle("Δείκτης θετικότητας ελέγχων - Δυτική Ελλάδα")
+
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + risks_update_in);
+
+      western_greece_items.forEach((e) => {
+        ru_western_greece = e.ru_western_greece;
+        risk_level_western_greece = e.risk_level_western_greece;
+        risks_embed_western_greece.addField(
+          "" + ru_western_greece,
+          "" + risk_level_western_greece,
+          true
+        );
+      });
+
+      const risks_embed_western_macedonia = new Discord.MessageEmbed()
+        .setColor("#de5a4a")
+        .setTitle("Δείκτης θετικότητας ελέγχων - Δυτική Μακεδονία")
+
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + risks_update_in);
+
+      western_macedonia_items.forEach((e) => {
+        ru_western_macedonia = e.ru_western_macedonia;
+        risk_level_western_macedonia = e.risk_level_western_macedonia;
+        risks_embed_western_macedonia.addField(
+          "" + ru_western_macedonia,
+          "" + risk_level_western_macedonia,
+          true
+        );
+      });
+
+      msg.channel.send(
+        "Επίπεδο 3 – Πορτοκαλί: Σε αυτό το επίπεδο ετοιμότητας προβλέπονται τα πιο κάτω μέτρα:Επικοινωνία και αναλυτική ενημέρωση των τοπικών αρχών για τα ιδιαίτερα επιδημιολογικά χαρακτηριστικά της περιοχής, Ενεργοποίηση ειδικού κλιμακίου ΕΟΔΥ/Πολιτικής Προστασίας προκειμένου να:• αυξηθούν oι δειγματοληπτικοί έλεγχοι για SARS-CoV-2 • πραγματοποιηθεί εντατική και επιτόπια ιχνηλάτιση • πραγματοποιηθεί κατά προτεραιότητα αυξημένος αριθμός εμβολιασμών"
+      );
+
+      msg.channel.send(
+        "Επίπεδο 4 – Κόκκινο Σε αυτό το επίπεδο ετοιμότητας προβλέπονται τα πιο κάτω μέτρα:Απαγόρευση κυκλοφορίας από 01:00 το βράδυ έως 06:00 το πρωί, με εξαίρεση λόγους εργασίας και σοβαρούς λόγους υγείας.Απαγόρευση μουσικής καθ’ όλο το εικοσιτετράωρο σε καταστήματα υγειονομικού ενδιαφέροντος και ψυχαγωγίας."
+      );
+
+      msg.channel.send({
+        embeds: [
+          risks_embed_attica,
+          risks_embed_cg,
+          risks_embed_cm,
+          risks_embed_crete,
+          risks_embed_eastern,
+          risks_embed_epirus,
+          risks_embed_aegean,
+          risks_embed_pelo,
+          risks_embed_s_aegean,
+          risks_embed_thessaly,
+        ],
+      });
+
+      msg.channel.send({
+        embeds: [risks_embed_western_greece, risks_embed_western_macedonia],
+      });
+      break;
   }
 });
 
-// client.on("messageCreate", async (message) => {
-//   if (message.content == "!validation") {
-//     const botMessage = await message.channel.send(
-//       "Δώσε την ημερομηνία που εμβολιάστηκες"
-//     );
-//     MessageCollector.question({
-//       botMessage,
-//       user: message.author.id,
-//       onMessage: async (botMessage, message) => {
-//         the_message = message.content;
-//         var today = new Date();
-//         var myDate = message.content;
-//         myDate = myDate.split("-");
-//         var newDate = new Date(myDate[2], myDate[1] - 1, myDate[0]);
-//         var newDate = newDate.getTime(); // Give that from user
-//         fourteen_days = today.setDate(today.getDate() - 14);
-//         if (newDate <= fourteen_days) {
-//           await message.channel.send("Έχεις έγκυρο πιστοποιητικό, ξαναπληκτρολόγησε ημερομηνία").react("✅");
-//           client.destroy();
-//         } else {
-//           await message.channel.send("Δεν έχεις έγκυρο πιστοποιητικό, ξαναπληκτρολόγησε ημερομηνία").react("❌");
-//           client.destroy();
-//         }
-//       },
-//     });
-//   }
-// });
 //make sure this line is the last line
 client.login(process.env.CLIENT_TOKEN); //login bot using token
