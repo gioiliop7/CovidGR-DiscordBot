@@ -295,7 +295,9 @@ client.on("message", async (msg) => {
       );
       break;
     case "!about":
-      msg.reply("Created with 😊 by gioiliop7. Βρές το source code του bot στο https://github.com/gioiliop7/CovidGR-DiscordBot");
+      msg.reply(
+        "Created with 😊 by gioiliop7. Βρές το source code του bot στο https://github.com/gioiliop7/CovidGR-DiscordBot"
+      );
       break;
     case "!cases":
       const todays_cases = await cases();
@@ -1173,13 +1175,18 @@ const bot_commands = [
   "!risklevels",
 ];
 
-client.on("message", (message) => {
-  if (message.author.bot) return;
-  if (bot_commands.includes(message.content)) return;
-  message.channel.send(
-    "Το συγκεκριμένο command δεν είναι διαθέσιμο. Δείτε τα διαθέσιμα command πληκτρολογώντας !covidhelp"
-  );
-});
+function validate_message() {
+  client.on("message", (message) => {
+    if (message.author.bot) return;
+    if (bot_commands.includes(message.content)) return;
+    if(message.content.includes('-')) return;
+    message.channel.send(
+      "Το συγκεκριμένο command δεν είναι διαθέσιμο. Δείτε τα διαθέσιμα command πληκτρολογώντας !covidhelp"
+    );
+  });
+}
+
+validate_message();
 
 //make sure this line is the last line
 client.login(process.env.CLIENT_TOKEN); //login bot using token
