@@ -295,7 +295,7 @@ client.on("message", async (msg) => {
       );
       break;
     case "!about":
-      msg.reply("Created with 😊 by gioiliop7 ");
+      msg.reply("Created with 😊 by gioiliop7. Βρές το source code του bot στο https://github.com/gioiliop7/CovidGR-DiscordBot");
       break;
     case "!cases":
       const todays_cases = await cases();
