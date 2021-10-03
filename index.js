@@ -1177,12 +1177,14 @@ const bot_commands = [
 
 function validate_message() {
   client.on("message", (message) => {
-    if (message.author.bot) return;
-    if (bot_commands.includes(message.content)) return;
-    if (message.content.includes("-")) return;
-    message.channel.send(
-      "Το συγκεκριμένο command δεν είναι διαθέσιμο. Δείτε τα διαθέσιμα command πληκτρολογώντας !covidhelp"
-    );
+    if(message.content.startsWith("!")){
+      if (message.author.bot) return;
+      if (bot_commands.includes(message.content)) return;
+      if (message.content.includes("-")) return;
+      message.channel.send(
+        "Το συγκεκριμένο command δεν είναι διαθέσιμο. Δείτε τα διαθέσιμα command πληκτρολογώντας !covidhelp"
+      );
+    }
   });
 }
 
