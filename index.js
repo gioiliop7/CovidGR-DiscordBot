@@ -11,6 +11,15 @@ client.on("ready", () => {
   client.user.setActivity("!covidhelp", { type: "LISTENING" });
 });
 
+function date_format(date) {
+  const d = new Date(date);
+  const ye = new Intl.DateTimeFormat("el", { year: "numeric" }).format(d);
+  const mo = new Intl.DateTimeFormat("el", { month: "short" }).format(d);
+  const da = new Intl.DateTimeFormat("el", { day: "2-digit" }).format(d);
+  date = `${da}-${mo}-${ye}`;
+  return date;
+}
+
 url_cases = "https://covid-19-greece.herokuapp.com/all"; // Done
 url_deaths = "https://covid-19-greece.herokuapp.com/deaths"; // Done
 url_vaccinations = "https://covid-19-greece.herokuapp.com/total-vaccinations"; // Done
@@ -30,11 +39,7 @@ const cases = async () => {
     let todays_cases = the_cases[today];
     let confirmed = todays_cases["confirmed"];
     let last_update = todays_cases["date"];
-    const d = new Date(last_update);
-    const ye = new Intl.DateTimeFormat("el", { year: "numeric" }).format(d);
-    const mo = new Intl.DateTimeFormat("el", { month: "short" }).format(d);
-    const da = new Intl.DateTimeFormat("el", { day: "2-digit" }).format(d);
-    last_update = `${da}-${mo}-${ye}`;
+    last_update = date_format(last_update);
     let the_result = {};
     the_result.last_update = last_update;
     the_result.confirmed = confirmed;
@@ -51,11 +56,7 @@ const vaccs_call = async () => {
     let total = the_vaccinations["total-vaccinations"];
     let total_vaccinations = total.totalvaccinations;
     let last_update = total.updated;
-    const d = new Date(last_update);
-    const ye = new Intl.DateTimeFormat("el", { year: "numeric" }).format(d);
-    const mo = new Intl.DateTimeFormat("el", { month: "short" }).format(d);
-    const da = new Intl.DateTimeFormat("el", { day: "2-digit" }).format(d);
-    last_update = `${da}-${mo}-${ye}`;
+    last_update = date_format(last_update);
     let the_result = {};
     the_result.last_update = last_update;
     the_result.vaccinations = total_vaccinations;
@@ -74,11 +75,7 @@ const deaths_call = async () => {
     let todays_cases = the_cases[today];
     let deaths = todays_cases["deaths"];
     let last_update = todays_cases["date"];
-    const d = new Date(last_update);
-    const ye = new Intl.DateTimeFormat("el", { year: "numeric" }).format(d);
-    const mo = new Intl.DateTimeFormat("el", { month: "short" }).format(d);
-    const da = new Intl.DateTimeFormat("el", { day: "2-digit" }).format(d);
-    last_update = `${da}-${mo}-${ye}`;
+    last_update = date_format(last_update);
     let the_result = {};
     the_result.last_update = last_update;
     the_result.deaths = deaths;
@@ -97,11 +94,7 @@ const ic_call = async () => {
     let todays_cases = the_cases[today];
     let ic = todays_cases["intensive_care"];
     let last_update = todays_cases["date"];
-    const d = new Date(last_update);
-    const ye = new Intl.DateTimeFormat("el", { year: "numeric" }).format(d);
-    const mo = new Intl.DateTimeFormat("el", { month: "short" }).format(d);
-    const da = new Intl.DateTimeFormat("el", { day: "2-digit" }).format(d);
-    last_update = `${da}-${mo}-${ye}`;
+    last_update = date_format(last_update);
     let the_result = {};
     the_result.last_update = last_update;
     the_result.ic = ic;
@@ -122,11 +115,7 @@ const tests_call = async () => {
     let rapids = todays_cases["rapid-tests"];
     let the_tests = todays_cases["tests"];
     let total_tests = rapids + the_tests;
-    const d = new Date(last_update);
-    const ye = new Intl.DateTimeFormat("el", { year: "numeric" }).format(d);
-    const mo = new Intl.DateTimeFormat("el", { month: "short" }).format(d);
-    const da = new Intl.DateTimeFormat("el", { day: "2-digit" }).format(d);
-    last_update = `${da}-${mo}-${ye}`;
+    last_update = date_format(last_update);
     let the_result = {};
     the_result.last_update = last_update;
     the_result.rapids = rapids;
@@ -143,11 +132,7 @@ const age_call = async () => {
     const result = await axios.get(url_age);
     let the_cases = result.data.age_distribution;
     let last_update = the_cases.updated;
-    const d = new Date(last_update);
-    const ye = new Intl.DateTimeFormat("el", { year: "numeric" }).format(d);
-    const mo = new Intl.DateTimeFormat("el", { month: "short" }).format(d);
-    const da = new Intl.DateTimeFormat("el", { day: "2-digit" }).format(d);
-    last_update = `${da}-${mo}-${ye}`;
+    last_update = date_format(last_update);
     let average = the_cases.age_average;
     let average_death = the_cases.average_death_age;
     let total_age_groups = the_cases.total_age_groups;
@@ -167,11 +152,7 @@ const levels = async () => {
     const result = await axios.get(url_risklevels);
     let the_cases = result.data.risk_levels;
     let last_update = the_cases.last_updated;
-    const d = new Date(last_update);
-    const ye = new Intl.DateTimeFormat("el", { year: "numeric" }).format(d);
-    const mo = new Intl.DateTimeFormat("el", { month: "short" }).format(d);
-    const da = new Intl.DateTimeFormat("el", { day: "2-digit" }).format(d);
-    last_update = `${da}-${mo}-${ye}`;
+    last_update = date_format(last_update);
     let regions = the_cases.region;
     let attica = regions.Attica;
     let centralgreece = regions.Central_Greece;
@@ -253,7 +234,7 @@ client.on("message", async (msg) => {
       break;
     case "!validate":
       msg.channel.send(
-        "Δώσε την ημερομηνία που εμβολιάστηκες στη μορφή 'ΗΗ-ΜΜ-ΕΕΕΕ'"
+        "Δώσε την ημερομηνία που εμβολιάστηκες στη μορφή 'ΗΗ-ΜΜ-ΕΕΕΕ' ή στη μορφή 'ΗΗ/ΜΜ/ΕΕΕΕ'"
       );
       const collector = new Discord.MessageCollector(
         msg.channel,
@@ -268,9 +249,43 @@ client.on("message", async (msg) => {
       collector.on("collect", (m) => {
         var today = new Date();
         var myDate = m.content;
-        myDate = myDate.split("-");
+        if (myDate.includes("/")) {
+          myDate = myDate.split("/");
+        } else {
+          myDate = myDate.split("-");
+        }
+        day_given = myDate[0];
+        month_given = myDate[1];
+        day_parsed = parseInt(day_given);
+        if (
+          day_given > 31 ||
+          (month_given > 12 && m.author.id === m.author.id)
+        ) {
+          m.channel.send(
+            "Δεν έδωσες έγκυρη ημερομηνία,παρακαλώ ξαναπροσπάθησε με το command !validate"
+          );
+          collector.stop();
+          return;
+        }
         var newDate = new Date(myDate[2], myDate[1] - 1, myDate[0]);
         var newDate = newDate.getTime(); // Give that from user
+        var today_date = new Date();
+        var dd = String(today_date.getDate()).padStart(2, "0");
+        var mm = String(today_date.getMonth() + 1).padStart(2, "0");
+        var yyyy = today_date.getFullYear();
+        today_date = dd + "-" + mm + "-" + yyyy;
+        today_date = today_date.split("-");
+        today_date = new Date(today_date[2], today_date[1] - 1, today_date[0]);
+        today_date = today_date.getTime();
+
+        if (today_date < newDate) {
+          m.channel.send(
+            "Έδωσες μεταγενέστερη ημερομηνία,παρακαλώ ξαναπροσπάθησε με το command !validate"
+          );
+          collector.stop();
+          return;
+        }
+
         fourteen_days = today.setDate(today.getDate() - 14);
 
         if (newDate <= fourteen_days && m.author.id === m.author.id) {
@@ -1177,7 +1192,7 @@ const bot_commands = [
 
 function validate_message() {
   client.on("message", (message) => {
-    if(message.content.startsWith("!")){
+    if (message.content.startsWith("!")) {
       if (message.author.bot) return;
       if (bot_commands.includes(message.content)) return;
       if (message.content.includes("-")) return;
