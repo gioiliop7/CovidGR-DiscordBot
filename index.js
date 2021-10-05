@@ -279,9 +279,8 @@ client.on("message", async (msg) => {
           return;
         }
         if (
-          year_given <= 2020 &&
-          month_given < 12 &&
-          m.author.id === m.author.id
+          (year_given < 2020 && m.author.id === m.author.id) ||
+          (year_given = 2020 && month_given < 12 && m.author.id === m.author.id)
         ) {
           m.channel.send(
             "Δεν είχαν ξεκινήσει οι εμβολιασμοί την δωθέσα ημερομηνία,παρακαλώ ξαναπροσπάθησε με το command !validate"
