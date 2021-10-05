@@ -1,6 +1,7 @@
 require("dotenv").config(); //initialize dotenv
 const axios = require("axios"); //add this line at the top
 const Discord = require("discord.js"); //import discord.js
+const { parse } = require("path/posix");
 const { CLIENT_RENEG_WINDOW } = require("tls");
 const client = new Discord.Client({
   intents: [Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILDS],
@@ -234,7 +235,7 @@ client.on("message", async (msg) => {
       break;
     case "!validate":
       msg.channel.send(
-        "Δώσε την ημερομηνία που εμβολιάστηκες στη μορφή 'ΗΗ-ΜΜ-ΕΕΕΕ' ή στη μορφή 'ΗΗ/ΜΜ/ΕΕΕΕ'"
+        "Δώσε την ημερομηνία που ολοκλήρωσες τον εμβολιασμό σου στη μορφή 'ΗΗ-ΜΜ-ΕΕΕΕ' ή στη μορφή 'ΗΗ/ΜΜ/ΕΕΕΕ'"
       );
       const collector = new Discord.MessageCollector(
         msg.channel,
@@ -249,6 +250,13 @@ client.on("message", async (msg) => {
       collector.on("collect", (m) => {
         var today = new Date();
         var myDate = m.content;
+        if (myDate.includes(".")) {
+          m.channel.send(
+            "Δεν έδωσες έγκυρη μορφή ημερομηνίας,παρακαλώ ξαναπροσπάθησε με το command !validate"
+          );
+          collector.stop();
+          return;
+        }
         if (myDate.includes("/")) {
           myDate = myDate.split("/");
         } else {
@@ -256,13 +264,27 @@ client.on("message", async (msg) => {
         }
         day_given = myDate[0];
         month_given = myDate[1];
+        year_given = myDate[2];
         day_parsed = parseInt(day_given);
+        month_parsed = parseInt(month_given);
+        year_parsed = parseInt(year_given);
         if (
-          day_given > 31 ||
+          (day_given > 31 && m.author.id === m.author.id) ||
           (month_given > 12 && m.author.id === m.author.id)
         ) {
           m.channel.send(
             "Δεν έδωσες έγκυρη ημερομηνία,παρακαλώ ξαναπροσπάθησε με το command !validate"
+          );
+          collector.stop();
+          return;
+        }
+        if (
+          year_given <= 2020 &&
+          month_given < 12 &&
+          m.author.id === m.author.id
+        ) {
+          m.channel.send(
+            "Δεν είχαν ξεκινήσει οι εμβολιασμοί την δωθέσα ημερομηνία,παρακαλώ ξαναπροσπάθησε με το command !validate"
           );
           collector.stop();
           return;
