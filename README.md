@@ -4,6 +4,9 @@
 Covid-GR Discord bot is a bot built in Node.js and gives stastistics and information about Covid-19 in Greece.
 The language of the bot answers is in Greek.
 
+## Add to your Discord server.
+https://bit.ly/2YexHWX
+
 ## Clone the project
 
 ```
@@ -61,6 +64,11 @@ The bot status has changed to online and its ready to answer your commands.
 ###  List of bot commands
 ```
 !covidhelp
+```
+
+###  Latest news of covid-19 in Greece
+```
+!news
 ```
 
 ### Check covid certificate validation.

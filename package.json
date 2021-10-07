@@ -13,7 +13,8 @@
     "discord-collector": "^1.11.7",
     "discord-quiz": "^1.0.4",
     "discord.js": "^13.1.0",
-    "dotenv": "^10.0.0"
+    "dotenv": "^10.0.0",
+    "google-news-json": "^2.0.4"
   },
   "devDependencies": {
     "nodemon": "^2.0.13"
