@@ -3,6 +3,7 @@ const axios = require("axios"); //add this line at the top
 const Discord = require("discord.js"); //import discord.js
 const { parse } = require("path/posix");
 const { CLIENT_RENEG_WINDOW } = require("tls");
+let googleNewsAPI = require("google-news-json");
 const client = new Discord.Client({
   intents: [Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILDS],
 });
@@ -218,6 +219,7 @@ client.on("message", async (msg) => {
             value: "!validate",
           },
           { name: "Ραντεβού εμβολιασμού", value: "!emvolio" },
+          { name: "3 τελευταία νέα για τον ιό στην Ελλάδα", value: "!news" },
           { name: "Περισσότερα για μένα", value: "!about" },
           { name: "Κρούσματα", value: "!cases" },
           { name: "Θανάτοι", value: "!deaths" },
@@ -246,7 +248,6 @@ client.on("message", async (msg) => {
           maxMatches: 100,
         }
       );
-
       collector.on("collect", (m) => {
         var today = new Date();
         var myDate = m.content;
@@ -280,7 +281,9 @@ client.on("message", async (msg) => {
         }
         if (
           (year_given < 2020 && m.author.id === m.author.id) ||
-          (year_given = 2020 && month_given < 12 && m.author.id === m.author.id)
+          (year_given == 2020 &&
+            month_given < 12 &&
+            m.author.id === m.author.id)
         ) {
           m.channel.send(
             "Δεν είχαν ξεκινήσει οι εμβολιασμοί την δωθέσα ημερομηνία,παρακαλώ ξαναπροσπάθησε με το command !validate"
@@ -564,6 +567,37 @@ client.on("message", async (msg) => {
           sixtyfive_embed,
         ],
       });
+      break;
+    case "!news":
+      let news = await googleNewsAPI.getNews(
+        googleNewsAPI.SEARCH,
+        "κορονοιοσ ελλαδα",
+        "el-GR"
+      );
+      let items = news.items;
+      
+      length = items.length;
+      i = 0;
+      for (i = 0; i < 3; i++) {
+        let last_item = items[i];
+        // let random_item = items[Math.floor(Math.random()*items.length)];
+        let last_item_title = last_item.title;
+        let last_item_link = last_item.link;
+        let last_item_date = last_item.pubDate;
+        last_item_date = date_format(last_item_date);
+        let publisher = last_item.source.text;
+        
+        const newsEmbed = new Discord.MessageEmbed()
+        .setColor("#379c6f")
+        .setTitle("" + last_item_title)
+        .setURL(""+last_item_link)
+
+        .setFooter("Δημοσιέυθηκε - " + publisher + ' - ' + last_item_date);
+        msg.channel.send({
+          embeds: [newsEmbed],
+        });
+      }
+
       break;
     case "!risklevels":
       const todays_risks = await levels();
@@ -1209,6 +1243,7 @@ const bot_commands = [
   "!tests",
   "!age",
   "!risklevels",
+  "!news",
 ];
 
 function validate_message() {

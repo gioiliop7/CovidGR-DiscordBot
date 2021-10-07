@@ -66,6 +66,11 @@ The bot status has changed to online and its ready to answer your commands.
 !covidhelp
 ```
 
+###  Latest news of covid-19 in Greece
+```
+!news
+```
+
 ### Check covid certificate validation.
 ```
 !validate
