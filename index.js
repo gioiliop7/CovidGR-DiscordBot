@@ -51,6 +51,51 @@ const cases = async () => {
   }
 };
 
+const max_deaths = async () => {
+  try {
+    const result = await axios.get(url_deaths);
+    let the_cases = result.data.cases;
+    let length_of_cases = the_cases.length;
+    let today = length_of_cases - 1;
+    let todays_cases = the_cases[today];
+    let last_update = todays_cases["date"];
+    last_update = date_format(last_update);
+    let i = 0;
+    let date_array = [];
+    let num_array = [];
+    for (i = 0; i < length_of_cases; i++) {
+      let death_date = the_cases[i]["date"];
+      let death_num = the_cases[i]["deaths"];
+      date_array.push(death_date);
+      num_array.push(death_num);
+    }
+    let j = 0;
+    let day_deaths = [];
+    for (j = 0; j < num_array.length; j++) {
+      the_last_number = num_array[j];
+      the_previous_number = num_array[j - 1];
+      let the_new_number = the_last_number - the_previous_number;
+      day_deaths.push(the_new_number);
+    }
+
+    day_deaths = day_deaths.filter(function (value) {
+      return !Number.isNaN(value);
+    });
+
+    let max = Math.max(...day_deaths);
+    let index = day_deaths.indexOf(max);
+    let date_max = date_array[index + 1];
+    date_max = date_format(date_max);
+    let the_result = {};
+    the_result.last_update = last_update;
+    the_result.max = max;
+    the_result.max_date = date_max;
+    return JSON.stringify(the_result);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 const vaccs_call = async () => {
   try {
     const result = await axios.get(url_vaccinations);
@@ -227,6 +272,7 @@ client.on("message", async (msg) => {
           { name: "Εμβολιασμοί", value: "!vaccs" },
           { name: "Tests", value: "!tests" },
           { name: "Ηλικιακά δεδομένα", value: "!age" },
+          { name: "Μέγιστος αριθμός θανάτων ανά ημέρα", value: "!maxdeaths" },
           {
             name: "Δείκτης θετικότητας ελέγχων ανά περιφέρεια",
             value: "!risklevels",
@@ -370,10 +416,27 @@ client.on("message", async (msg) => {
         .setFooter("Τελευταία ενημέρωση δεδομένων - " + deaths_update_in);
       msg.channel.send({ embeds: [deaths_embed] });
       break;
+    case "!maxdeaths":
+      const max_deaths_result = await max_deaths();
+      const maxdeathsresultjson = await JSON.parse(max_deaths_result);
+      let maxdeaths_update_in = maxdeathsresultjson.last_update;
+      let maxdeaths_num = maxdeathsresultjson.max;
+      let maxdeaths_date = maxdeathsresultjson.max_date;
+      const max_deaths_embed = new Discord.MessageEmbed()
+        .setColor("#712735")
+        .setTitle("Μέγιστος αριθμός θανάτων ανά ημέρα: " + maxdeaths_num)
+        .addFields({ name: "Ημερομηνία", value: `${maxdeaths_date}` })
+        .setAuthor(
+          "Επίσημα δεδομένα κυβέρνησης covid",
+          "https://upload.wikimedia.org/wikipedia/commons/8/82/SARS-CoV-2_without_background.png",
+          "https://covid19.gov.gr/"
+        )
+        .setFooter("Τελευταία ενημέρωση δεδομένων - " + maxdeaths_update_in);
+      msg.channel.send({ embeds: [max_deaths_embed] });
+      break;
     case "!ic":
       const todays_ic = await ic_call();
       const icresultjson = await JSON.parse(todays_ic);
-      console.log(icresultjson);
       let ic_update_in = icresultjson.last_update;
       let ic_num = icresultjson.ic;
       const ic_embed = new Discord.MessageEmbed()
@@ -390,7 +453,6 @@ client.on("message", async (msg) => {
     case "!vaccs":
       const todays_vaccs = await vaccs_call();
       const vaccsresultjson = await JSON.parse(todays_vaccs);
-      console.log(vaccsresultjson);
       let vaccs_update_in = vaccsresultjson.last_update;
       let vaccs_num = vaccsresultjson.vaccinations;
       const vaccs_embed = new Discord.MessageEmbed()
@@ -575,7 +637,7 @@ client.on("message", async (msg) => {
         "el-GR"
       );
       let items = news.items;
-      
+
       length = items.length;
       i = 0;
       for (i = 0; i < 3; i++) {
@@ -586,13 +648,13 @@ client.on("message", async (msg) => {
         let last_item_date = last_item.pubDate;
         last_item_date = date_format(last_item_date);
         let publisher = last_item.source.text;
-        
-        const newsEmbed = new Discord.MessageEmbed()
-        .setColor("#379c6f")
-        .setTitle("" + last_item_title)
-        .setURL(""+last_item_link)
 
-        .setFooter("Δημοσιέυθηκε - " + publisher + ' - ' + last_item_date);
+        const newsEmbed = new Discord.MessageEmbed()
+          .setColor("#379c6f")
+          .setTitle("" + last_item_title)
+          .setURL("" + last_item_link)
+
+          .setFooter("Δημοσιέυθηκε - " + publisher + " - " + last_item_date);
         msg.channel.send({
           embeds: [newsEmbed],
         });
@@ -1244,6 +1306,7 @@ const bot_commands = [
   "!age",
   "!risklevels",
   "!news",
+  "!maxdeaths",
 ];
 
 function validate_message() {
