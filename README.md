@@ -113,6 +113,11 @@ The bot status has changed to online and its ready to answer your commands.
 ```
 !risklevels
 ```
+
+###  Max deaths number of covid-19 in Greece
+```
+!maxdeaths
+```
 ## Api used for stats
 [ Coronavirus Greece API](https://covid-19-greece.herokuapp.com/)
 
